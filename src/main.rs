@@ -1,6 +1,8 @@
-mod day01;
 use std::env;
 mod utils;
+
+mod day01;
+mod day02;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -10,11 +12,10 @@ fn main() {
             .expect("Command line argument must be an integer");
         match day_to_run {
             1 => day01::calories(),
+            2 => day02::rock_paper_scissors(),
             _ => {
                 println!("Day {} is not yet implemented", day_to_run)
             }
         }
-    } else {
-        // new day will be here...
     }
 }
