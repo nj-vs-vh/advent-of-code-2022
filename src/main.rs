@@ -1,33 +1,74 @@
-use std::env;
+mod days;
+mod solution;
 mod utils;
 
-mod day01;
-mod day02;
-mod day03;
-mod day04;
-mod day05;
-mod day06;
-mod day07;
-mod day08;
+use clap::Parser;
+use clap::ValueEnum;
+use days::get_solution;
+use solution::Solution;
+use std::time::Instant;
+use utils::read_input;
+
+use crate::utils::ascii_box;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum RunPart {
+    Pt1,
+    Pt2,
+    Both,
+}
+
+#[derive(Parser, Debug)]
+#[command(name = "AoC 2022 solutions")]
+#[command(author = "Igor V. <gosha.vaiman@gmail.com>")]
+#[command(version = "1.3.1.2")]
+struct CliArgs {
+    day: u8,
+
+    #[arg(short, long, default_value_t = false)]
+    example: bool,
+
+    #[arg(value_enum, default_value_t = RunPart::Both)]
+    part: RunPart,
+}
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 1 {
-        let day_to_run: u8 = (&args[1])
-            .parse()
-            .expect("Command line argument must be an integer");
-        match day_to_run {
-            1 => day01::calories(),
-            2 => day02::rock_paper_scissors(),
-            3 => day03::rucksacks_reorganization(),
-            4 => day04::camp_cleanup(),
-            5 => day05::supply_stack(),
-            6 => day06::tuning_trouble(),
-            7 => day07::no_space_left_on_device(),
-            8 => day08::treetop_tree_house(),
-            _ => {
-                println!("Day {} is not yet implemented", day_to_run)
-            }
-        }
+    let args = CliArgs::parse();
+    println!("AoC 2022, day {}", args.day);
+
+    let maybe_solution = get_solution(&args.day);
+    if let None = maybe_solution {
+        println!("Solution is not yet implemented");
+        return;
+    }
+    let solution = maybe_solution.unwrap();
+
+    let read_input_result = read_input(args.day, args.example);
+    if let Err(e) = read_input_result {
+        println!("Error reading input file ({})!", e);
+        return;
+    }
+    let input_string = read_input_result.unwrap();
+
+    let input = solution.parse_input(input_string);
+    let input_c = input.clone();
+
+    if args.part == RunPart::Pt1 || args.part == RunPart::Both {
+        let start_pt1 = Instant::now();
+        let output_pt1 = solution.solve_pt1(input);
+        println!(
+            "\nPart 1 solution (took {:.3} msec):\n{}",
+            start_pt1.elapsed().as_secs_f32() * 1000.0,
+            ascii_box(format!("{}", output_pt1), 1, 35)
+        );
+    }
+    if args.part == RunPart::Pt2 || args.part == RunPart::Both {
+        let start_pt2 = Instant::now();
+        let output_pt2 = solution.solve_pt2(input_c);
+        println!(
+            "\nPart 2 solution (took {:.3} msec):\n{}",
+            start_pt2.elapsed().as_secs_f32() * 1000.0,
+            ascii_box(format!("{}", output_pt2), 1, 35)
+        );
     }
 }
