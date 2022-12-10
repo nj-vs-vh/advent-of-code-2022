@@ -27,6 +27,9 @@ struct CliArgs {
 
     #[arg(short, long, default_value_t = false)]
     visualize: bool,
+
+    #[arg(short, long, default_value_t = 0.3)]
+    frame_duration: f32,
 }
 
 fn main() {
@@ -42,7 +45,7 @@ fn main() {
     let part = args.part;
 
     let vis: Box<dyn Visualizer> = match args.visualize {
-        true => Box::new(TerminalVisualizer::new(1)),
+        true => Box::new(TerminalVisualizer::new(args.frame_duration)),
         false => Box::new(DisabledVisualizer {}),
     };
 
@@ -55,6 +58,7 @@ fn main() {
         6 => days::day06::TuningTrouble.run(input, part, vis),
         7 => days::day07::NoSpaceLeftOnDevice.run(input, part, vis),
         8 => days::day08::TreetopTreeHouse.run(input, part, vis),
+        9 => days::day09::RopeBridge.run(input, part, vis),
         _ => {
             println!("Solution is not yet implemented");
         }

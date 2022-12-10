@@ -3,8 +3,12 @@ use std::{thread::sleep, time::Duration};
 pub trait Visualizer {
     fn write(&mut self, s: &str);
 
-    fn write_char(&mut self, ch: &char) {
+    fn write_char(&mut self, ch: char) {
         self.write(&ch.to_string());
+    }
+
+    fn write_newline(&mut self) {
+        self.write_char('\n')
     }
 
     fn write_line(&mut self, line: &str) {
@@ -12,6 +16,8 @@ pub trait Visualizer {
     }
 
     fn end_frame(&mut self);
+
+    fn is_enabled(&self) -> bool;
 }
 
 pub struct DisabledVisualizer;
@@ -20,6 +26,10 @@ impl Visualizer for DisabledVisualizer {
     fn write(&mut self, _: &str) {}
 
     fn end_frame(&mut self) {}
+
+    fn is_enabled(&self) -> bool {
+        false
+    }
 }
 
 pub struct TerminalVisualizer {
@@ -29,9 +39,9 @@ pub struct TerminalVisualizer {
 }
 
 impl TerminalVisualizer {
-    pub fn new(delay_sec: u32) -> TerminalVisualizer {
+    pub fn new(delay_sec: f32) -> TerminalVisualizer {
         TerminalVisualizer {
-            frame_delay: Duration::from_secs(delay_sec as u64),
+            frame_delay: Duration::from_micros((delay_sec * 1e6) as u64),
             prev_frame_lines: 0,
             curr_frame_buffer: String::with_capacity(4096),
         }
@@ -55,5 +65,9 @@ impl Visualizer for TerminalVisualizer {
             .count();
         self.curr_frame_buffer.clear();
         sleep(self.frame_delay);
+    }
+
+    fn is_enabled(&self) -> bool {
+        true
     }
 }
