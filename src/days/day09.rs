@@ -130,26 +130,27 @@ impl Solution for RopeBridge {
                             let c = Coords { x, y };
                             let knot_idx = rope.iter().find_position(|k| **k == c);
                             if let Some((idx, _)) = knot_idx {
-                                visualizer.write_char(if idx == 0 {
-                                    'H'
+                                let default = format!(" {} ", idx);
+                                visualizer.write(if idx == 0 {
+                                    " H "
                                 } else if idx == KNOTS {
-                                    'T'
+                                    " T "
                                 } else {
-                                    format!("{}", idx).chars().next().unwrap()
+                                    &default
                                 })
                             } else {
                                 const GRID_LINES_EACH: i32 = 10;
                                 if x % GRID_LINES_EACH == 0 {
                                     if y % GRID_LINES_EACH == 0 {
-                                        visualizer.write_char('+');
+                                        visualizer.write(" + ");
                                     } else {
-                                        visualizer.write_char('|')
+                                        visualizer.write(" | ")
                                     }
                                 } else {
                                     if y % GRID_LINES_EACH == 0 {
-                                        visualizer.write_char('-')
+                                        visualizer.write("---")
                                     } else {
-                                        visualizer.write_char(' ')
+                                        visualizer.write("   ")
                                     }
                                 }
                             }
