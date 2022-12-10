@@ -1,8 +1,8 @@
-use crate::utils::read_input;
+use crate::solution::Solution;
 use itertools::Itertools;
 use std::collections::{hash_map::RandomState, HashSet};
 
-fn find_misplaced_item(rucksack: &str) -> char {
+fn find_misplaced_item(rucksack: String) -> char {
     let compartment_size = rucksack.len() / 2;
     let first: HashSet<char> = rucksack[..compartment_size].chars().collect();
     let second: HashSet<char> = rucksack[compartment_size..].chars().collect();
@@ -10,7 +10,7 @@ fn find_misplaced_item(rucksack: &str) -> char {
     first.intersection(&second).next().unwrap().clone()
 }
 
-fn find_badge(group_rucksacks: &Vec<&str>) -> char {
+fn find_badge(group_rucksacks: &Vec<String>) -> char {
     group_rucksacks
         .iter()
         .map(|r| HashSet::from_iter(r.chars()))
@@ -37,26 +37,31 @@ fn item_priority(item: char) -> u32 {
     item.to_owned() as u32 - offset
 }
 
-pub fn rucksacks_reorganization() {
-    let input = read_input(3, false);
+pub struct RucksacksReorganization;
 
-    println!(
-        "pt1: {:?}",
+impl Solution for RucksacksReorganization {
+    type InputT = Vec<String>;
+    type OutputT = u32;
+
+    fn parse_input(&self, input_raw: String) -> Self::InputT {
+        input_raw.lines().map(|s| s.to_owned()).collect()
+    }
+
+    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
         input
-            .lines()
+            .into_iter()
             .map(find_misplaced_item)
             .map(item_priority)
-            .sum::<u32>()
-    );
+            .sum()
+    }
 
-    println!(
-        "pt2: {:?}",
+    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
         input
-            .lines()
+            .into_iter()
             .chunks(3)
             .into_iter()
             .map(|chunk| find_badge(&(chunk.collect())))
             .map(item_priority)
             .sum::<u32>()
-    )
+    }
 }

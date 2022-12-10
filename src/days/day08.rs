@@ -1,12 +1,11 @@
 use std::fmt::Display;
 
+use crate::solution::Solution;
 #[allow(unused_imports)]
 use crate::utils::{print_2d_vec, read_input};
 
-const DAY: u8 = 8;
-
 #[derive(Debug)]
-struct Forest {
+pub struct Forest {
     tree_heights: Vec<Vec<u8>>,
     width: usize,
     height: usize,
@@ -25,7 +24,7 @@ fn print_visibility_mask(vm: &VisibilityMap) {
     println!("");
 }
 
-type ScenicScoreMap = Vec<Vec<usize>>;
+type ScenicScoreMap = Vec<Vec<u32>>;
 
 #[derive(PartialEq, Eq, Debug)]
 enum Direction {
@@ -154,41 +153,47 @@ impl Display for Forest {
     }
 }
 
-pub fn treetop_tree_house() {
-    let input = read_input(DAY, false);
-    let forest = Forest::parse(&input);
-    // println!("{}", forest);
+pub struct TreetopTreeHouse;
 
-    let mut visibility_map = forest.empty_visibility_map();
-    for direction in [Direction::TB, Direction::LR, Direction::BT, Direction::RL] {
-        // println!("{:?}", direction);
-        let directional_map = forest.visibility_map(&direction);
-        // print_visibility_mask(&directional_map);
-        for i in 0..forest.width {
-            for j in 0..forest.height {
-                visibility_map[i][j] |= directional_map[i][j];
+impl Solution for TreetopTreeHouse {
+    type InputT = Forest;
+    type OutputT = u32;
+
+    fn parse_input(&self, input_raw: String) -> Self::InputT {
+        Forest::parse(&input_raw)
+    }
+
+    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+        let mut visibility_map = input.empty_visibility_map();
+        for direction in [Direction::TB, Direction::LR, Direction::BT, Direction::RL] {
+            // println!("{:?}", direction);
+            let directional_map = input.visibility_map(&direction);
+            // print_visibility_mask(&directional_map);
+            for i in 0..input.width {
+                for j in 0..input.height {
+                    visibility_map[i][j] |= directional_map[i][j];
+                }
             }
         }
-    }
-    println!(
-        "pt1: {}",
         visibility_map
             .iter()
             .flatten()
             .map(|is_visible| *is_visible as u32)
             .sum::<u32>()
-    );
+    }
 
-    let mut scenic_score_map = vec![vec![1; forest.width]; forest.height];
-    for direction in [Direction::TB, Direction::LR, Direction::BT, Direction::RL] {
-        // println!("{:?}", direction);
-        let directional_map = forest.scenic_score_map(&direction);
-        // print_2d_vec(&directional_map);
-        for i in 0..forest.width {
-            for j in 0..forest.height {
-                scenic_score_map[i][j] *= directional_map[i][j];
+    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+        let mut scenic_score_map = vec![vec![1; input.width]; input.height];
+        for direction in [Direction::TB, Direction::LR, Direction::BT, Direction::RL] {
+            // println!("{:?}", direction);
+            let directional_map = input.scenic_score_map(&direction);
+            // print_2d_vec(&directional_map);
+            for i in 0..input.width {
+                for j in 0..input.height {
+                    scenic_score_map[i][j] *= directional_map[i][j];
+                }
             }
         }
+        *scenic_score_map.iter().flatten().max().unwrap()
     }
-    println!("pt1: {}", scenic_score_map.iter().flatten().max().unwrap())
 }

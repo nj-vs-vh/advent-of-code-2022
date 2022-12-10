@@ -1,6 +1,6 @@
-use crate::utils::read_input;
+use std::str::Chars;
 
-const DAY: u8 = 6;
+use crate::solution::Solution;
 
 type EncodedChar = u32;
 
@@ -9,20 +9,24 @@ fn encode_char(ch: &char) -> EncodedChar {
     (2 as EncodedChar).pow(char_code)
 }
 
-// const BUFFER_SIZE: usize = 4; // for pt1
-const BUFFER_SIZE: usize = 14; // for pt2
+const MAX_BUFFER_SIZE: usize = 14; // for pt2
 
 struct Buffer {
-    buf: [EncodedChar; BUFFER_SIZE],
+    buf: [EncodedChar; MAX_BUFFER_SIZE],
+    size: usize,
     write_idx: usize,
     seen_values: u32,
     is_filled: bool,
 }
 
 impl Buffer {
-    fn new() -> Buffer {
+    fn new(size: usize) -> Buffer {
+        if size > MAX_BUFFER_SIZE {
+            panic!("Too large buffer!");
+        }
         return Buffer {
-            buf: [0; BUFFER_SIZE],
+            buf: [0; MAX_BUFFER_SIZE],
+            size,
             write_idx: 0,
             seen_values: 0,
             is_filled: false,
@@ -31,7 +35,7 @@ impl Buffer {
 
     fn update(&mut self, value: EncodedChar) {
         self.buf[self.write_idx] = value;
-        self.write_idx = (self.write_idx + 1) % BUFFER_SIZE;
+        self.write_idx = (self.write_idx + 1) % self.size;
         self.seen_values += 1;
         if !self.is_filled && self.write_idx == 0 {
             self.is_filled = true;
@@ -52,20 +56,33 @@ impl Buffer {
         }
         return true;
     }
+
+    fn find_distinct(&mut self, characters: Chars) -> Option<u32> {
+        for character in characters {
+            self.update(encode_char(&character));
+            if self.all_distinct() {
+                return Some(self.seen_values);
+            }
+        }
+        None
+    }
 }
 
-pub fn tuning_trouble() {
-    let input = read_input(DAY, false);
+pub struct TuningTrouble;
 
-    let mut buffer = Buffer::new();
-    for character in input.chars() {
-        buffer.update(encode_char(&character));
-        if buffer.all_distinct() {
-            break;
-        }
+impl Solution for TuningTrouble {
+    type InputT = String;
+    type OutputT = u32;
+
+    fn parse_input(&self, input_raw: String) -> Self::InputT {
+        input_raw
     }
-    println!(
-        "first all-distinct sequence of {} chars found at: {}",
-        BUFFER_SIZE, buffer.seen_values
-    )
+
+    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+        Buffer::new(4).find_distinct(input.chars()).unwrap()
+    }
+
+    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+        Buffer::new(14).find_distinct(input.chars()).unwrap()
+    }
 }

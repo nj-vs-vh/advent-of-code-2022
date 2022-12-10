@@ -1,10 +1,8 @@
-use crate::solution::Solution;
-
-mod day01;
-
-pub fn get_solution(day: &u8) -> Option<impl Solution> {
-    match day {
-        1 => Some(day01::CalorieCouting),
-        _ => None,
-    }
-}
+pub mod day01;
+pub mod day02;
+pub mod day03;
+pub mod day04;
+pub mod day05;
+pub mod day06;
+pub mod day07;
+pub mod day08;

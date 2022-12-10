@@ -1,8 +1,6 @@
 use regex::Regex;
 
-use crate::utils::read_input;
-
-const DAY: u8 = 5;
+use crate::solution::Solution;
 
 type Stacks = Vec<Vec<char>>;
 
@@ -29,7 +27,7 @@ fn parse_stacks(s: &str) -> Stacks {
 }
 
 #[derive(Debug)]
-struct MoveDef {
+pub struct MoveDef {
     move_count: usize,
     from: usize,
     to: usize,
@@ -68,7 +66,7 @@ impl MoveDef {
     }
 }
 
-fn to_answer(stacks: &Stacks) -> String {
+fn concat_top_items(stacks: &Stacks) -> String {
     let mut res = String::new();
     for stack in stacks {
         res.push(stack.last().unwrap().to_owned());
@@ -76,37 +74,48 @@ fn to_answer(stacks: &Stacks) -> String {
     return res;
 }
 
-pub fn supply_stack() {
-    let input = read_input(DAY, false);
-    let mut input_blocks = input.split("\n\n");
-    let stacks_init_block = input_blocks.next().unwrap().to_owned();
+pub struct SupplyStack;
 
-    let move_definitions_block = input_blocks.next().unwrap().to_owned();
-    let move_defs: Vec<MoveDef> = move_definitions_block
-        .lines()
-        .map(|l| MoveDef::parse(l))
-        .collect();
+impl Solution for SupplyStack {
+    type InputT = (Stacks, Vec<MoveDef>);
+    type OutputT = String;
 
-    let mut stacks_pt1 = parse_stacks(&stacks_init_block);
-    let mut stacks_pt2 = stacks_pt1.clone();
+    fn parse_input(&self, input_raw: String) -> Self::InputT {
+        let mut input_blocks = input_raw.split("\n\n");
+        let stacks_init_block = input_blocks.next().unwrap().to_owned();
 
-    for md in move_defs.iter() {
-        for _ in 0..md.move_count {
-            let crate_ = stacks_pt1[md.from].pop().unwrap();
-            stacks_pt1[md.to].push(crate_);
-        }
+        let move_definitions_block = input_blocks.next().unwrap().to_owned();
+        let move_defs: Vec<MoveDef> = move_definitions_block
+            .lines()
+            .map(|l| MoveDef::parse(l))
+            .collect();
+
+        (parse_stacks(&stacks_init_block), move_defs)
     }
-    println!("pt1: {:?}", to_answer(&stacks_pt1));
 
-    for md in move_defs.iter() {
-        let mut picked_up: Vec<char> = Vec::new();
-        for _ in 0..md.move_count {
-            picked_up.push(stacks_pt2[md.from].pop().unwrap());
+    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+        let (mut stacks, move_defs) = input;
+        for md in move_defs.iter() {
+            for _ in 0..md.move_count {
+                let crate_ = stacks[md.from].pop().unwrap();
+                stacks[md.to].push(crate_);
+            }
         }
-        picked_up.reverse();
-        for c in picked_up {
-            stacks_pt2[md.to].push(c);
-        }
+        concat_top_items(&stacks)
     }
-    println!("pt2: {:?}", to_answer(&stacks_pt2));
+
+    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+        let (mut stacks, move_defs) = input;
+        for md in move_defs.iter() {
+            let mut picked_up: Vec<char> = Vec::new();
+            for _ in 0..md.move_count {
+                picked_up.push(stacks[md.from].pop().unwrap());
+            }
+            picked_up.reverse();
+            for c in picked_up {
+                stacks[md.to].push(c);
+            }
+        }
+        concat_top_items(&stacks)
+    }
 }

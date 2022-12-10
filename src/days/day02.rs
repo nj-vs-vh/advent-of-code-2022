@@ -1,4 +1,4 @@
-use crate::utils::read_input;
+use crate::solution::Solution;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum Shape {
@@ -96,20 +96,28 @@ fn calculate_round_score_pt2(line: &str) -> u32 {
     };
     return my_shape.score() + my_shape.match_with(&opponent_shape) as u32;
 }
-pub fn rock_paper_scissors() {
-    let input = read_input(2, false);
-    println!(
-        "pt1: {}",
+
+pub struct RockPaperScissors;
+
+impl Solution for RockPaperScissors {
+    type InputT = String;
+    type OutputT = u32;
+
+    fn parse_input(&self, input_raw: String) -> Self::InputT {
+        input_raw
+    }
+
+    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
         input
             .split("\n")
             .map(calculate_round_score_pt1)
             .sum::<u32>()
-    );
-    println!(
-        "pt2: {}",
+    }
+
+    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
         input
             .split("\n")
             .map(calculate_round_score_pt2)
             .sum::<u32>()
-    );
+    }
 }
