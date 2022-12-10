@@ -2,11 +2,15 @@ mod days;
 mod solution;
 mod types;
 mod utils;
+mod visualizer;
 
 use clap::Parser;
 use utils::read_input;
 
-use crate::solution::Solution;
+use crate::{
+    solution::Solution,
+    visualizer::{DisabledVisualizer, TerminalVisualizer, Visualizer},
+};
 
 #[derive(Parser, Debug)]
 #[command(name = "AoC 2022 solutions")]
@@ -20,6 +24,9 @@ struct CliArgs {
 
     #[arg(value_enum, default_value_t = types::RunPart::Both)]
     part: types::RunPart,
+
+    #[arg(short, long, default_value_t = false)]
+    visualize: bool,
 }
 
 fn main() {
@@ -33,15 +40,21 @@ fn main() {
     }
     let input = read_input_result.unwrap();
     let part = args.part;
+
+    let vis: Box<dyn Visualizer> = match args.visualize {
+        true => Box::new(TerminalVisualizer::new(1)),
+        false => Box::new(DisabledVisualizer {}),
+    };
+
     match args.day {
-        1 => days::day01::CalorieCouting.run(input, part),
-        2 => days::day02::RockPaperScissors.run(input, part),
-        3 => days::day03::RucksacksReorganization.run(input, part),
-        4 => days::day04::CampCleanup.run(input, part),
-        5 => days::day05::SupplyStack.run(input, part),
-        6 => days::day06::TuningTrouble.run(input, part),
-        7 => days::day07::NoSpaceLeftOnDevice.run(input, part),
-        8 => days::day08::TreetopTreeHouse.run(input, part),
+        1 => days::day01::CalorieCouting.run(input, part, vis),
+        2 => days::day02::RockPaperScissors.run(input, part, vis),
+        3 => days::day03::RucksacksReorganization.run(input, part, vis),
+        4 => days::day04::CampCleanup.run(input, part, vis),
+        5 => days::day05::SupplyStack.run(input, part, vis),
+        6 => days::day06::TuningTrouble.run(input, part, vis),
+        7 => days::day07::NoSpaceLeftOnDevice.run(input, part, vis),
+        8 => days::day08::TreetopTreeHouse.run(input, part, vis),
         _ => {
             println!("Solution is not yet implemented");
         }

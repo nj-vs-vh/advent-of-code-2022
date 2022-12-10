@@ -1,4 +1,5 @@
 use crate::solution::Solution;
+use crate::visualizer::Visualizer;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum Shape {
@@ -107,14 +108,14 @@ impl Solution for RockPaperScissors {
         input_raw
     }
 
-    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt1(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         input
             .split("\n")
             .map(calculate_round_score_pt1)
             .sum::<u32>()
     }
 
-    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt2(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         input
             .split("\n")
             .map(calculate_round_score_pt2)

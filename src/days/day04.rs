@@ -1,4 +1,5 @@
 use crate::solution::Solution;
+use crate::visualizer::Visualizer;
 
 pub struct Range(u32, u32);
 
@@ -31,14 +32,14 @@ impl Solution for CampCleanup {
         input_raw.lines().map(parse_ranges).collect()
     }
 
-    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt1(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         input
             .iter()
             .map(|(r1, r2)| (r1.contains(&r2) || r2.contains(&r1)) as u32)
             .sum::<u32>()
     }
 
-    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt2(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         input
             .iter()
             .map(|(r1, r2)| (r1.overlaps(&r2)) as u32)

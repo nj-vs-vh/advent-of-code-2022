@@ -1,4 +1,5 @@
 use crate::solution::Solution;
+use crate::visualizer::Visualizer;
 use itertools::Itertools;
 use std::collections::{hash_map::RandomState, HashSet};
 
@@ -47,7 +48,7 @@ impl Solution for RucksacksReorganization {
         input_raw.lines().map(|s| s.to_owned()).collect()
     }
 
-    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt1(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         input
             .into_iter()
             .map(find_misplaced_item)
@@ -55,7 +56,7 @@ impl Solution for RucksacksReorganization {
             .sum()
     }
 
-    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt2(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         input
             .into_iter()
             .chunks(3)

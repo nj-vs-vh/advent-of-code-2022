@@ -1,3 +1,4 @@
+use crate::visualizer::Visualizer;
 use regex::Regex;
 
 use crate::solution::Solution;
@@ -93,7 +94,7 @@ impl Solution for SupplyStack {
         (parse_stacks(&stacks_init_block), move_defs)
     }
 
-    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt1(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         let (mut stacks, move_defs) = input;
         for md in move_defs.iter() {
             for _ in 0..md.move_count {
@@ -104,7 +105,7 @@ impl Solution for SupplyStack {
         concat_top_items(&stacks)
     }
 
-    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt2(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         let (mut stacks, move_defs) = input;
         for md in move_defs.iter() {
             let mut picked_up: Vec<char> = Vec::new();

@@ -1,3 +1,4 @@
+use crate::visualizer::Visualizer;
 use std::fmt::Display;
 
 use crate::solution::Solution;
@@ -163,7 +164,7 @@ impl Solution for TreetopTreeHouse {
         Forest::parse(&input_raw)
     }
 
-    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt1(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         let mut visibility_map = input.empty_visibility_map();
         for direction in [Direction::TB, Direction::LR, Direction::BT, Direction::RL] {
             // println!("{:?}", direction);
@@ -182,7 +183,7 @@ impl Solution for TreetopTreeHouse {
             .sum::<u32>()
     }
 
-    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt2(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         let mut scenic_score_map = vec![vec![1; input.width]; input.height];
         for direction in [Direction::TB, Direction::LR, Direction::BT, Direction::RL] {
             // println!("{:?}", direction);

@@ -8,7 +8,7 @@ pub fn read_input(day: u8, example: bool) -> Result<String, Error> {
     fs::read_to_string(format!("data/day{:02}/{}.txt", day, filename))
 }
 
-fn repeated_char(ch: char, count: usize) -> String {
+pub fn repeated_char(ch: char, count: usize) -> String {
     repeat(ch).take(count).collect::<String>()
 }
 

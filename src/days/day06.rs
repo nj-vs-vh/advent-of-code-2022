@@ -1,3 +1,4 @@
+use crate::visualizer::Visualizer;
 use std::str::Chars;
 
 use crate::solution::Solution;
@@ -78,11 +79,11 @@ impl Solution for TuningTrouble {
         input_raw
     }
 
-    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt1(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         Buffer::new(4).find_distinct(input.chars()).unwrap()
     }
 
-    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt2(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         Buffer::new(14).find_distinct(input.chars()).unwrap()
     }
 }

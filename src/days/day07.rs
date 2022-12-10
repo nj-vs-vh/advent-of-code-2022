@@ -1,3 +1,4 @@
+use crate::visualizer::Visualizer;
 use std::collections::HashMap;
 
 use crate::solution::Solution;
@@ -81,14 +82,14 @@ impl Solution for NoSpaceLeftOnDevice {
         input_raw
     }
 
-    fn solve_pt1(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt1(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         parse_dir_sizes(&input)
             .values()
             .filter(|v| **v < 100_000)
             .sum()
     }
 
-    fn solve_pt2(&self, input: Self::InputT) -> Self::OutputT {
+    fn solve_pt2(&self, input: Self::InputT, _visualizer: &mut dyn Visualizer) -> Self::OutputT {
         let dir_sizes = parse_dir_sizes(&input);
         let current_fs_size = dir_sizes[&vec!["/"]];
         let current_free_space = 70_000_000 - current_fs_size;
