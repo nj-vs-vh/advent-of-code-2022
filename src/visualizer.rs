@@ -42,7 +42,7 @@ pub trait Visualizer {
 pub struct DisabledVisualizer;
 
 impl Visualizer for DisabledVisualizer {
-    fn write_char(&mut self, ch: char) {}
+    fn write_char(&mut self, _ch: char) {}
 
     fn end_frame(&mut self) {}
 
@@ -50,7 +50,7 @@ impl Visualizer for DisabledVisualizer {
         false
     }
 
-    fn add_char_visualization_option(&mut self, opt: CharVisualizationOptions) {}
+    fn add_char_visualization_option(&mut self, _opt: CharVisualizationOptions) {}
 }
 
 pub struct TerminalVisualizer {

@@ -1,7 +1,6 @@
 use std::str::FromStr;
 use std::{cmp::max, collections::HashSet};
 
-use image::Rgb;
 use itertools::Itertools;
 use strum_macros::{Display, EnumString};
 
@@ -161,7 +160,7 @@ impl Solution for RopeBridge {
                                 const GRID_LINES_EACH: i32 = 10;
                                 if x % GRID_LINES_EACH == 0 {
                                     if y % GRID_LINES_EACH == 0 {
-                                        visualizer.write_char('+');
+                                        visualizer.write_char('┼');
                                     } else {
                                         visualizer.write_char('|')
                                     }
