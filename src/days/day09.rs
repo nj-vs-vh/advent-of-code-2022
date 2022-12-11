@@ -115,7 +115,7 @@ impl Solution for RopeBridge {
             visualizer.add_char_visualization_option(CharVisualizationOptions {
                 char: int2char(knot_idx),
                 is_bold: false,
-                color: color::get_rgb_pixel((360 * (knot_idx - 1) / 8) as u16, 100, 50),
+                color: color::get_rgb_pixel((270 * (knot_idx - 1) / 8) as u16, 100, 50),
             });
         }
 
