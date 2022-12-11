@@ -1,7 +1,11 @@
+#[macro_use]
+extern crate lazy_static;
+
 mod days;
 mod solution;
 mod types;
 mod utils;
+mod video;
 mod visualizer;
 
 use clap::Parser;
@@ -33,6 +37,11 @@ struct CliArgs {
 }
 
 fn main() {
+    // video::text_to_image::example();
+    video::texts_to_video(Vec::new());
+
+    return;
+
     let args = CliArgs::parse();
     println!("AoC 2022, day {}", args.day);
 
