@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use font_kit::canvas::{Canvas, Format, RasterizationOptions};
 use font_kit::family_name::FamilyName;
 use font_kit::font::Font;
@@ -13,12 +15,12 @@ use rand::prelude::*;
 use crate::utils::ascii_box;
 use crate::utils::repeated_char;
 
-lazy_static! {
-    static ref FONT: Font = SystemSource::new()
+fn get_font() -> Font {
+    SystemSource::new()
         .select_best_match(&[FamilyName::Monospace], &Properties::new())
         .unwrap()
         .load()
-        .unwrap();
+        .unwrap()
 }
 
 pub struct CharMatrix {
@@ -75,6 +77,9 @@ pub fn text_to_image(
         return None;
     }
 
+    let font_by_char: HashMap<char, Font> = HashMap::new();
+    let default_font = get_font();
+
     let text_width_chars = text_width_chars_ as u32;
     let text_height_chars = text_height_chars_ as u32;
 
@@ -98,9 +103,11 @@ pub fn text_to_image(
 
     for (line_idx, line) in char_matrix.lines.iter().enumerate() {
         for (char_idx, ch) in line.chars().enumerate() {
-            FONT.rasterize_glyph(
+            let font = font_by_char.get(&ch).unwrap_or(&default_font);
+
+            font.rasterize_glyph(
                 &mut canvas,
-                FONT.glyph_for_char(ch).unwrap(),
+                font.glyph_for_char(ch).unwrap(),
                 char_height_px as f32 * 1.1,
                 Transform2F::from_translation(Vector2F::new(0.0, char_height_px as f32)),
                 // Transform2F::from_scale(1.0),

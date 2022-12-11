@@ -1,6 +1,4 @@
-#[macro_use]
-extern crate lazy_static;
-
+mod color;
 mod days;
 mod solution;
 mod text_to_image;

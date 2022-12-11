@@ -11,12 +11,22 @@ pub fn repeated_char(ch: char, count: usize) -> String {
     repeat(ch).take(count).collect::<String>()
 }
 
+fn printable_line_len(line: &str) -> usize {
+    String::from_utf8_lossy(
+        strip_ansi_escapes::strip(line)
+            .unwrap_or(line.bytes().collect())
+            .as_slice(),
+    )
+    .chars()
+    .count()
+}
+
 pub fn ascii_box(content: String, padding: usize, line_width: usize) -> String {
     let lines: Vec<&str> = content.split("\n").collect();
     if lines.len() == 0 {
         return "".to_string();
     }
-    let content_width = lines.iter().map(|l| l.len()).max().unwrap();
+    let content_width = lines.iter().map(|l| printable_line_len(*l)).max().unwrap();
     let margin_spaces = repeated_char(
         ' ',
         if line_width >= content_width {
@@ -47,7 +57,7 @@ pub fn ascii_box(content: String, padding: usize, line_width: usize) -> String {
             margin_spaces,
             repeated_char(' ', padding),
             line,
-            repeated_char(' ', padding + (content_width - line.len())),
+            repeated_char(' ', padding + (content_width - printable_line_len(&line))),
             margin_spaces,
         ));
     }

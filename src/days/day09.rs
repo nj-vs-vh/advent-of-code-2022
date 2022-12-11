@@ -1,9 +1,12 @@
 use std::str::FromStr;
 use std::{cmp::max, collections::HashSet};
 
+use image::Rgb;
 use itertools::Itertools;
 use strum_macros::{Display, EnumString};
 
+use crate::color;
+use crate::visualizer::CharVisualizationOptions;
 use crate::{solution::Solution, types::Coords};
 
 #[derive(Debug, EnumString, Display)]
@@ -95,9 +98,26 @@ impl Solution for RopeBridge {
         visualizer: &mut dyn crate::visualizer::Visualizer,
     ) -> Self::OutputT {
         const KNOTS: usize = 10;
+        const VIS_HALFSIDE: i32 = 12;
 
-        const VIS_HALFSIDE: i32 = 8;
-        let mut vis_center: Coords<i32> = Coords::origin();
+        visualizer.add_char_visualization_option(CharVisualizationOptions {
+            char: 'H',
+            is_bold: true,
+            color: color::get_rgb_pixel(0, 100, 100),
+        });
+        visualizer.add_char_visualization_option(CharVisualizationOptions {
+            char: 'T',
+            is_bold: true,
+            color: color::get_rgb_pixel(0, 100, 80),
+        });
+        let int2char = |i: usize| format!("{}", i).chars().next().unwrap();
+        for knot_idx in 1..=9 {
+            visualizer.add_char_visualization_option(CharVisualizationOptions {
+                char: int2char(knot_idx),
+                is_bold: false,
+                color: color::get_rgb_pixel((360 * (knot_idx - 1) / 8) as u16, 100, 50),
+            });
+        }
 
         let mut rope = [Coords::origin(); KNOTS];
         let mut tail_positions: HashSet<Coords<i32>> = HashSet::new();
@@ -120,34 +140,36 @@ impl Solution for RopeBridge {
                 tail_positions.insert(rope[KNOTS - 1].clone());
 
                 if visualizer.is_enabled() {
-                    vis_center.x = rope.iter().map(|c| c.x).sum::<i32>() / (KNOTS as i32);
-                    vis_center.y = rope.iter().map(|c| c.y).sum::<i32>() / (KNOTS as i32);
-                    for y in ((vis_center.y - VIS_HALFSIDE)..=(vis_center.y + VIS_HALFSIDE)).rev() {
-                        for x in (vis_center.x - VIS_HALFSIDE)..=(vis_center.x + VIS_HALFSIDE) {
+                    for y in ((rope[KNOTS - 1].y - VIS_HALFSIDE)
+                        ..=(rope[KNOTS - 1].y + VIS_HALFSIDE))
+                        .rev()
+                    {
+                        for x in
+                            (rope[KNOTS - 1].x - VIS_HALFSIDE)..=(rope[KNOTS - 1].x + VIS_HALFSIDE)
+                        {
                             let c = Coords { x, y };
                             let knot_idx = rope.iter().find_position(|k| **k == c);
                             if let Some((idx, _)) = knot_idx {
-                                let default = format!("{}", idx);
-                                visualizer.write(if idx == 0 {
-                                    "H"
+                                visualizer.write_char(if idx == 0 {
+                                    'H'
                                 } else if idx == KNOTS {
-                                    "T"
+                                    'T'
                                 } else {
-                                    &default
+                                    int2char(idx)
                                 })
                             } else {
                                 const GRID_LINES_EACH: i32 = 10;
                                 if x % GRID_LINES_EACH == 0 {
                                     if y % GRID_LINES_EACH == 0 {
-                                        visualizer.write("+");
+                                        visualizer.write_char('+');
                                     } else {
-                                        visualizer.write("|")
+                                        visualizer.write_char('|')
                                     }
                                 } else {
                                     if y % GRID_LINES_EACH == 0 {
-                                        visualizer.write("-")
+                                        visualizer.write_char('-');
                                     } else {
-                                        visualizer.write(" ")
+                                        visualizer.write_char(' ');
                                     }
                                 }
                             }

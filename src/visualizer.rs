@@ -5,15 +5,23 @@ use std::{
     time::Duration,
 };
 
-use image::{codecs::gif::GifEncoder, Delay, Frame};
+use image::{codecs::gif::GifEncoder, Delay, Frame, Rgb};
 
 use crate::text_to_image::{text_to_image, CharMatrix};
 
-pub trait Visualizer {
-    fn write(&mut self, s: &str);
+pub struct CharVisualizationOptions {
+    pub char: char,
+    pub is_bold: bool,
+    pub color: Rgb<u8>,
+}
 
-    fn write_char(&mut self, ch: char) {
-        self.write(&ch.to_string());
+pub trait Visualizer {
+    fn write_char(&mut self, ch: char);
+
+    fn write_str(&mut self, s: &str) {
+        for ch in s.chars() {
+            self.write_char(ch);
+        }
     }
 
     fn write_newline(&mut self) {
@@ -21,30 +29,35 @@ pub trait Visualizer {
     }
 
     fn write_line(&mut self, line: &str) {
-        self.write(&format!("{}\n", line));
+        self.write_str(&format!("{}\n", line));
     }
 
     fn end_frame(&mut self);
 
     fn is_enabled(&self) -> bool;
+
+    fn add_char_visualization_option(&mut self, opt: CharVisualizationOptions);
 }
 
 pub struct DisabledVisualizer;
 
 impl Visualizer for DisabledVisualizer {
-    fn write(&mut self, _: &str) {}
+    fn write_char(&mut self, ch: char) {}
 
     fn end_frame(&mut self) {}
 
     fn is_enabled(&self) -> bool {
         false
     }
+
+    fn add_char_visualization_option(&mut self, opt: CharVisualizationOptions) {}
 }
 
 pub struct TerminalVisualizer {
     fps: f32,
     prev_frame_lines: usize,
     curr_frame_buffer: String,
+    opts: Vec<CharVisualizationOptions>,
 }
 
 impl TerminalVisualizer {
@@ -53,13 +66,31 @@ impl TerminalVisualizer {
             fps,
             prev_frame_lines: 0,
             curr_frame_buffer: String::with_capacity(4096),
+            opts: Vec::new(),
         }
     }
 }
 
 impl Visualizer for TerminalVisualizer {
-    fn write(&mut self, s: &str) {
-        self.curr_frame_buffer.extend(s.chars());
+    fn write_char(&mut self, ch: char) {
+        match self.opts.iter().find(|o| o.char == ch) {
+            Some(char_vis_opt) => {
+                let mut style = ansi_term::Style::new();
+                style = style.fg(ansi_term::Colour::RGB(
+                    char_vis_opt.color[0],
+                    char_vis_opt.color[1],
+                    char_vis_opt.color[2],
+                ));
+                if char_vis_opt.is_bold {
+                    style = style.bold();
+                }
+                self.curr_frame_buffer
+                    .extend(style.paint(String::from(ch)).to_string().chars())
+            }
+            None => {
+                self.curr_frame_buffer.push(ch);
+            }
+        }
     }
 
     fn end_frame(&mut self) {
@@ -79,6 +110,10 @@ impl Visualizer for TerminalVisualizer {
     fn is_enabled(&self) -> bool {
         true
     }
+
+    fn add_char_visualization_option(&mut self, opt: CharVisualizationOptions) {
+        self.opts.push(opt);
+    }
 }
 
 pub struct GifVisualizer {
@@ -88,6 +123,7 @@ pub struct GifVisualizer {
     gif: GifEncoder<File>,
     frame_dimensions: Option<(usize, usize)>,
     frames_since_last_progress_print: u32,
+    opts: Vec<CharVisualizationOptions>,
 }
 
 impl GifVisualizer {
@@ -102,13 +138,14 @@ impl GifVisualizer {
             ),
             frame_dimensions: None,
             frames_since_last_progress_print: 0,
+            opts: Vec::new(),
         }
     }
 }
 
 impl Visualizer for GifVisualizer {
-    fn write(&mut self, s: &str) {
-        self.curr_frame_buffer.extend(s.chars());
+    fn write_char(&mut self, ch: char) {
+        self.curr_frame_buffer.push(ch);
     }
 
     fn end_frame(&mut self) {
@@ -139,5 +176,9 @@ impl Visualizer for GifVisualizer {
 
     fn is_enabled(&self) -> bool {
         true
+    }
+
+    fn add_char_visualization_option(&mut self, opt: CharVisualizationOptions) {
+        self.opts.push(opt);
     }
 }
