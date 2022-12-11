@@ -3,17 +3,19 @@ extern crate lazy_static;
 
 mod days;
 mod solution;
+mod text_to_image;
 mod types;
 mod utils;
-mod video;
 mod visualizer;
+
+use std::path::PathBuf;
 
 use clap::Parser;
 use utils::read_input;
 
 use crate::{
     solution::Solution,
-    visualizer::{DisabledVisualizer, TerminalVisualizer, Visualizer},
+    visualizer::{DisabledVisualizer, GifVisualizer, TerminalVisualizer, Visualizer},
 };
 
 #[derive(Parser, Debug)]
@@ -32,16 +34,17 @@ struct CliArgs {
     #[arg(short, long, default_value_t = false)]
     visualize: bool,
 
-    #[arg(short, long, default_value_t = 0.3)]
-    frame_duration: f32,
+    #[arg(long, default_value_t = 30.0)]
+    fps: f32,
+
+    #[arg(long, value_name = "FILE")]
+    gif: Option<PathBuf>,
+
+    #[arg(long, default_value_t = 800)]
+    gif_width: u32,
 }
 
 fn main() {
-    // video::text_to_image::example();
-    video::texts_to_video(Vec::new());
-
-    return;
-
     let args = CliArgs::parse();
     println!("AoC 2022, day {}", args.day);
 
@@ -54,7 +57,17 @@ fn main() {
     let part = args.part;
 
     let vis: Box<dyn Visualizer> = match args.visualize {
-        true => Box::new(TerminalVisualizer::new(args.frame_duration)),
+        true => {
+            if let Some(gif_path) = args.gif {
+                Box::new(GifVisualizer::new(
+                    gif_path.to_str().unwrap(),
+                    args.fps,
+                    args.gif_width,
+                ))
+            } else {
+                Box::new(TerminalVisualizer::new(args.fps))
+            }
+        }
         false => Box::new(DisabledVisualizer {}),
     };
 
@@ -68,6 +81,7 @@ fn main() {
         7 => days::day07::NoSpaceLeftOnDevice.run(input, part, vis),
         8 => days::day08::TreetopTreeHouse.run(input, part, vis),
         9 => days::day09::RopeBridge.run(input, part, vis),
+        10 => days::day10::CathodeRayTube.run(input, part, vis),
         _ => {
             println!("Solution is not yet implemented");
         }

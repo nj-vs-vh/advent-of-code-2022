@@ -96,8 +96,8 @@ impl Solution for RopeBridge {
     ) -> Self::OutputT {
         const KNOTS: usize = 10;
 
-        let mut vis_lower_left: Coords<i32> = Coords::origin();
-        let mut vis_upper_right: Coords<i32> = Coords::origin();
+        const VIS_HALFSIDE: i32 = 8;
+        let mut vis_center: Coords<i32> = Coords::origin();
 
         let mut rope = [Coords::origin(); KNOTS];
         let mut tail_positions: HashSet<Coords<i32>> = HashSet::new();
@@ -120,21 +120,18 @@ impl Solution for RopeBridge {
                 tail_positions.insert(rope[KNOTS - 1].clone());
 
                 if visualizer.is_enabled() {
-                    let margin = 5;
-                    vis_lower_left.x = rope.iter().map(|c| c.x).min().unwrap() - margin;
-                    vis_lower_left.y = rope.iter().map(|c| c.y).min().unwrap() - margin;
-                    vis_upper_right.x = rope.iter().map(|c| c.x).max().unwrap() + margin;
-                    vis_upper_right.y = rope.iter().map(|c| c.y).max().unwrap() + margin;
-                    for y in (vis_lower_left.y..=vis_upper_right.y).rev() {
-                        for x in vis_lower_left.x..=vis_upper_right.x {
+                    vis_center.x = rope.iter().map(|c| c.x).sum::<i32>() / (KNOTS as i32);
+                    vis_center.y = rope.iter().map(|c| c.y).sum::<i32>() / (KNOTS as i32);
+                    for y in ((vis_center.y - VIS_HALFSIDE)..=(vis_center.y + VIS_HALFSIDE)).rev() {
+                        for x in (vis_center.x - VIS_HALFSIDE)..=(vis_center.x + VIS_HALFSIDE) {
                             let c = Coords { x, y };
                             let knot_idx = rope.iter().find_position(|k| **k == c);
                             if let Some((idx, _)) = knot_idx {
-                                let default = format!(" {} ", idx);
+                                let default = format!("{}", idx);
                                 visualizer.write(if idx == 0 {
-                                    " H "
+                                    "H"
                                 } else if idx == KNOTS {
-                                    " T "
+                                    "T"
                                 } else {
                                     &default
                                 })
@@ -142,15 +139,15 @@ impl Solution for RopeBridge {
                                 const GRID_LINES_EACH: i32 = 10;
                                 if x % GRID_LINES_EACH == 0 {
                                     if y % GRID_LINES_EACH == 0 {
-                                        visualizer.write(" + ");
+                                        visualizer.write("+");
                                     } else {
-                                        visualizer.write(" | ")
+                                        visualizer.write("|")
                                     }
                                 } else {
                                     if y % GRID_LINES_EACH == 0 {
-                                        visualizer.write("---")
+                                        visualizer.write("-")
                                     } else {
-                                        visualizer.write("   ")
+                                        visualizer.write(" ")
                                     }
                                 }
                             }
