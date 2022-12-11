@@ -152,7 +152,7 @@ impl Solution for RopeBridge {
                             if let Some((idx, _)) = knot_idx {
                                 visualizer.write_char(if idx == 0 {
                                     'H'
-                                } else if idx == KNOTS {
+                                } else if idx == KNOTS - 1 {
                                     'T'
                                 } else {
                                     int2char(idx)
