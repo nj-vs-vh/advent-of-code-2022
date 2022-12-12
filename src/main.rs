@@ -83,6 +83,7 @@ fn main() {
         8 => days::day08::TreetopTreeHouse.run(input, part, vis),
         9 => days::day09::RopeBridge.run(input, part, vis),
         10 => days::day10::CathodeRayTube.run(input, part, vis),
+        11 => days::day11::MonkeyInTheMiddle.run(input, part, vis),
         _ => {
             println!("Solution is not yet implemented");
         }
