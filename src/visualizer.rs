@@ -8,6 +8,10 @@ use std::{
 
 use image::{codecs::gif::GifEncoder, Delay, Frame, Rgb};
 
+use termion::event::Key;
+use termion::input::TermRead;
+use termion::raw::IntoRawMode;
+
 use crate::text_to_image::{text_to_image, CharMatrix};
 
 pub struct CharVisualizationOption {
@@ -107,15 +111,74 @@ impl Visualizer for TerminalVisualizer {
     fn end_frame(&mut self) {
         let mut displayed_frame_idx = self.frame_buffer.len() - 1;
 
-        for _ in 0..self.prev_displayed_frame_lines {
-            print!("\x1B[2K\x1B[1A\x1B[2K"); // clear
+        loop {
+            for _ in 0..self.prev_displayed_frame_lines {
+                print!("\x1B[2K\x1B[1A\x1B[2K"); // clear
+            }
+            print!("{}", self.frame_buffer[displayed_frame_idx]);
+            self.prev_displayed_frame_lines = self.frame_buffer[displayed_frame_idx]
+                .chars()
+                .filter(|c| *c == '\n')
+                .count();
+
+            if !self.is_interactive {
+                sleep(Duration::from_micros((1e6 / self.fps) as u64));
+                break;
+            } else {
+                // user controls input loop
+                println!(
+                    "\ninteractive mode (frame {} / {})\nh, l - forward and backwards\n_, $ - jump to the first and last frame\nq - exit interactive mode",
+                    displayed_frame_idx + 1,
+                    self.frame_buffer.len()
+                );
+                let stdin = io::stdin();
+                let mut stdout = io::stdout().into_raw_mode().unwrap();
+                let mut generate_next_frame = false;
+                for c in stdin.keys() {
+                    write!(stdout, "{}", termion::clear::CurrentLine).unwrap();
+
+                    match c.unwrap() {
+                        Key::Char('h') | Key::Left => {
+                            if displayed_frame_idx > 0 {
+                                displayed_frame_idx -= 1;
+                                break;
+                            }
+                        }
+                        Key::Char('l') | Key::Right | Key::Char(' ') => {
+                            if displayed_frame_idx < self.frame_buffer.len() - 1 {
+                                displayed_frame_idx += 1;
+                            } else {
+                                generate_next_frame = true;
+                            }
+                            break;
+                        }
+                        Key::Char('$') => {
+                            displayed_frame_idx = self.frame_buffer.len() - 1;
+                            break;
+                        }
+                        Key::Char('_') => {
+                            displayed_frame_idx = 0;
+                            break;
+                        }
+                        Key::Char('q') => {
+                            self.is_interactive = false;
+                            generate_next_frame = true;
+                            break;
+                        }
+                        _ => {}
+                    }
+                    stdout.flush().unwrap();
+                }
+
+                for _ in 0..5 {
+                    // clearing prompt
+                    print!("\x1B[2K\x1B[1A\x1B[2K");
+                }
+                if generate_next_frame {
+                    break;
+                }
+            }
         }
-        print!("{}", self.frame_buffer[displayed_frame_idx]);
-        self.prev_displayed_frame_lines = self.frame_buffer[displayed_frame_idx]
-            .chars()
-            .filter(|c| *c == '\n')
-            .count();
-        sleep(Duration::from_micros((1e6 / self.fps) as u64));
 
         // creating new empty frame for the next iteration
         self.frame_buffer.push_back(String::with_capacity(1000));
