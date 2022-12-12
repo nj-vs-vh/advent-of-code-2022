@@ -1,4 +1,5 @@
 use std::{
+    collections::VecDeque,
     fs::File,
     io::{self, Write},
     thread::sleep,
@@ -9,7 +10,7 @@ use image::{codecs::gif::GifEncoder, Delay, Frame, Rgb};
 
 use crate::text_to_image::{text_to_image, CharMatrix};
 
-pub struct CharVisualizationOptions {
+pub struct CharVisualizationOption {
     pub char: char,
     pub is_bold: bool,
     pub color: Rgb<u8>,
@@ -36,7 +37,7 @@ pub trait Visualizer {
 
     fn is_enabled(&self) -> bool;
 
-    fn add_char_visualization_option(&mut self, opt: CharVisualizationOptions);
+    fn add_char_visualization_option(&mut self, opt: CharVisualizationOption);
 }
 
 pub struct DisabledVisualizer;
@@ -50,22 +51,28 @@ impl Visualizer for DisabledVisualizer {
         false
     }
 
-    fn add_char_visualization_option(&mut self, _opt: CharVisualizationOptions) {}
+    fn add_char_visualization_option(&mut self, _opt: CharVisualizationOption) {}
 }
+
+const INTERACTIVE_TERMINAL_VISUALIZER_MAX_HISTORY_DEPTH: usize = 1000;
 
 pub struct TerminalVisualizer {
     fps: f32,
-    prev_frame_lines: usize,
-    curr_frame_buffer: String,
-    opts: Vec<CharVisualizationOptions>,
+    is_interactive: bool,
+    prev_displayed_frame_lines: usize,
+    frame_buffer: VecDeque<String>,
+    opts: Vec<CharVisualizationOption>,
 }
 
 impl TerminalVisualizer {
-    pub fn new(fps: f32) -> TerminalVisualizer {
+    pub fn new(fps: f32, is_interactive: bool) -> TerminalVisualizer {
         TerminalVisualizer {
             fps,
-            prev_frame_lines: 0,
-            curr_frame_buffer: String::with_capacity(4096),
+            is_interactive,
+            prev_displayed_frame_lines: 0,
+            frame_buffer: VecDeque::with_capacity(
+                INTERACTIVE_TERMINAL_VISUALIZER_MAX_HISTORY_DEPTH,
+            ),
             opts: Vec::new(),
         }
     }
@@ -73,6 +80,10 @@ impl TerminalVisualizer {
 
 impl Visualizer for TerminalVisualizer {
     fn write_char(&mut self, ch: char) {
+        if self.frame_buffer.len() == 0 {
+            self.frame_buffer.push_back(String::with_capacity(1000));
+        }
+        let current_frame_idx = self.frame_buffer.len() - 1;
         match self.opts.iter().find(|o| o.char == ch) {
             Some(char_vis_opt) => {
                 let mut style = ansi_term::Style::new();
@@ -84,34 +95,40 @@ impl Visualizer for TerminalVisualizer {
                 if char_vis_opt.is_bold {
                     style = style.bold();
                 }
-                self.curr_frame_buffer
+                self.frame_buffer[current_frame_idx]
                     .extend(style.paint(String::from(ch)).to_string().chars())
             }
             None => {
-                self.curr_frame_buffer.push(ch);
+                self.frame_buffer[current_frame_idx].push(ch);
             }
         }
     }
 
     fn end_frame(&mut self) {
-        for _ in 0..self.prev_frame_lines {
-            print!("\x1B[2K\x1B[1A\x1B[2K"); // clear line
+        let mut displayed_frame_idx = self.frame_buffer.len() - 1;
+
+        for _ in 0..self.prev_displayed_frame_lines {
+            print!("\x1B[2K\x1B[1A\x1B[2K"); // clear
         }
-        print!("{}", self.curr_frame_buffer);
-        self.prev_frame_lines = self
-            .curr_frame_buffer
+        print!("{}", self.frame_buffer[displayed_frame_idx]);
+        self.prev_displayed_frame_lines = self.frame_buffer[displayed_frame_idx]
             .chars()
             .filter(|c| *c == '\n')
             .count();
-        self.curr_frame_buffer.clear();
         sleep(Duration::from_micros((1e6 / self.fps) as u64));
+
+        // creating new empty frame for the next iteration
+        self.frame_buffer.push_back(String::with_capacity(1000));
+        if self.frame_buffer.len() > INTERACTIVE_TERMINAL_VISUALIZER_MAX_HISTORY_DEPTH {
+            self.frame_buffer.pop_front();
+        }
     }
 
     fn is_enabled(&self) -> bool {
         true
     }
 
-    fn add_char_visualization_option(&mut self, opt: CharVisualizationOptions) {
+    fn add_char_visualization_option(&mut self, opt: CharVisualizationOption) {
         self.opts.push(opt);
     }
 }
@@ -119,11 +136,11 @@ impl Visualizer for TerminalVisualizer {
 pub struct GifVisualizer {
     fps: f32,
     width_px: u32,
-    curr_frame_buffer: String,
+    curr_frame: String,
     gif: GifEncoder<File>,
     frame_dimensions: Option<(usize, usize)>,
     frames_since_last_progress_print: u32,
-    opts: Vec<CharVisualizationOptions>,
+    opts: Vec<CharVisualizationOption>,
 }
 
 impl GifVisualizer {
@@ -131,7 +148,7 @@ impl GifVisualizer {
         GifVisualizer {
             fps,
             width_px,
-            curr_frame_buffer: String::new(),
+            curr_frame: String::new(),
             gif: GifEncoder::new_with_speed(
                 File::create(filename).expect(&format!("Failed to create file: {}", filename)),
                 20,
@@ -145,11 +162,11 @@ impl GifVisualizer {
 
 impl Visualizer for GifVisualizer {
     fn write_char(&mut self, ch: char) {
-        self.curr_frame_buffer.push(ch);
+        self.curr_frame.push(ch);
     }
 
     fn end_frame(&mut self) {
-        let mut frame_chars = CharMatrix::new(&self.curr_frame_buffer);
+        let mut frame_chars = CharMatrix::new(&self.curr_frame);
         if let Some(dims) = self.frame_dimensions {
             frame_chars.ensure_dimensions(dims.0, dims.1);
         } else {
@@ -157,7 +174,7 @@ impl Visualizer for GifVisualizer {
         }
 
         let image = text_to_image(&frame_chars, self.width_px, 1.0, 0.0);
-        self.curr_frame_buffer.clear();
+        self.curr_frame.clear();
         if let Some(img) = image {
             let frame =
                 Frame::from_parts(img, 0, 0, Delay::from_numer_denom_ms(1000, self.fps as u32));
@@ -178,7 +195,7 @@ impl Visualizer for GifVisualizer {
         true
     }
 
-    fn add_char_visualization_option(&mut self, opt: CharVisualizationOptions) {
+    fn add_char_visualization_option(&mut self, opt: CharVisualizationOption) {
         self.opts.push(opt);
     }
 }

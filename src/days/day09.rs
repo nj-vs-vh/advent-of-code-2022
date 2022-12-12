@@ -5,7 +5,7 @@ use itertools::Itertools;
 use strum_macros::{Display, EnumString};
 
 use crate::color;
-use crate::visualizer::CharVisualizationOptions;
+use crate::visualizer::CharVisualizationOption;
 use crate::{solution::Solution, types::Coords};
 
 #[derive(Debug, EnumString, Display)]
@@ -99,19 +99,19 @@ impl Solution for RopeBridge {
         const KNOTS: usize = 10;
         const VIS_HALFSIDE: i32 = 12;
 
-        visualizer.add_char_visualization_option(CharVisualizationOptions {
+        visualizer.add_char_visualization_option(CharVisualizationOption {
             char: 'H',
             is_bold: true,
             color: color::get_rgb_pixel(0, 100, 100),
         });
-        visualizer.add_char_visualization_option(CharVisualizationOptions {
+        visualizer.add_char_visualization_option(CharVisualizationOption {
             char: 'T',
             is_bold: true,
             color: color::get_rgb_pixel(0, 100, 80),
         });
         let int2char = |i: usize| format!("{}", i).chars().next().unwrap();
         for knot_idx in 1..=9 {
-            visualizer.add_char_visualization_option(CharVisualizationOptions {
+            visualizer.add_char_visualization_option(CharVisualizationOption {
                 char: int2char(knot_idx),
                 is_bold: false,
                 color: color::get_rgb_pixel((270 * (knot_idx - 1) / 8) as u16, 100, 50),

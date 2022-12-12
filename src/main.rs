@@ -35,6 +35,9 @@ struct CliArgs {
     #[arg(long, default_value_t = 30.0)]
     fps: f32,
 
+    #[arg(short, long, default_value_t = false)]
+    interactive: bool,
+
     #[arg(long, value_name = "FILE")]
     gif: Option<PathBuf>,
 
@@ -63,7 +66,7 @@ fn main() {
                     args.gif_width,
                 ))
             } else {
-                Box::new(TerminalVisualizer::new(args.fps))
+                Box::new(TerminalVisualizer::new(args.fps, args.interactive))
             }
         }
         false => Box::new(DisabledVisualizer {}),
