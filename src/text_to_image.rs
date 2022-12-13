@@ -4,7 +4,7 @@ use font_kit::canvas::{Canvas, Format, RasterizationOptions};
 use font_kit::family_name::FamilyName;
 use font_kit::font::Font;
 use font_kit::hinting::HintingOptions;
-use font_kit::properties::Properties;
+use font_kit::properties::{Properties, Weight};
 use font_kit::source::SystemSource;
 use image;
 use num::clamp;
@@ -14,10 +14,15 @@ use rand::prelude::*;
 
 use crate::utils::ascii_box;
 use crate::utils::repeated_char;
+use crate::visualizer::CharVisualizationOption;
 
-fn get_font() -> Font {
+fn get_font(is_bold: bool) -> Font {
+    let mut properties = Properties::new();
+    if is_bold {
+        properties.weight = Weight::BOLD;
+    }
     SystemSource::new()
-        .select_best_match(&[FamilyName::Monospace], &Properties::new())
+        .select_best_match(&[FamilyName::Monospace], &properties)
         .unwrap()
         .load()
         .unwrap()
@@ -71,14 +76,20 @@ pub fn text_to_image(
     target_width_px: u32,
     char_aspect_ratio: f32,
     position_randomization_range_px: f32,
+    char_opts: &Vec<CharVisualizationOption>,
 ) -> Option<image::RgbaImage> {
     let (text_width_chars_, text_height_chars_) = char_matrix.dimensions();
     if text_width_chars_ == 0 {
         return None;
     }
 
-    let font_by_char: HashMap<char, Font> = HashMap::new();
-    let default_font = get_font();
+    let mut font_by_char: HashMap<char, Font> = HashMap::new();
+    for char_opt in char_opts {
+        if char_opt.is_bold {
+            font_by_char.insert(char_opt.char, get_font(true));
+        }
+    }
+    let default_font = get_font(false);
 
     let text_width_chars = text_width_chars_ as u32;
     let text_height_chars = text_height_chars_ as u32;
@@ -104,13 +115,13 @@ pub fn text_to_image(
     for (line_idx, line) in char_matrix.lines.iter().enumerate() {
         for (char_idx, ch) in line.chars().enumerate() {
             let font = font_by_char.get(&ch).unwrap_or(&default_font);
+            let maybe_char_visualization_opt = char_opts.iter().find(|o| o.char == ch);
 
             font.rasterize_glyph(
                 &mut canvas,
                 font.glyph_for_char(ch).unwrap(),
                 char_height_px as f32 * 1.1,
                 Transform2F::from_translation(Vector2F::new(0.0, char_height_px as f32)),
-                // Transform2F::from_scale(1.0),
                 HintingOptions::None,
                 RasterizationOptions::GrayscaleAa,
             )
@@ -136,7 +147,17 @@ pub fn text_to_image(
                             height_px as i32 - 1,
                         ) as u32,
                     );
-                    *pixel = image::Rgba([*pixel_value, *pixel_value, *pixel_value, 255]);
+                    *pixel = if let Some(opt) = maybe_char_visualization_opt {
+                        let dimming = *pixel_value as u32;
+                        image::Rgba([
+                            (dimming * opt.color[0] as u32 / 255) as u8,
+                            (dimming * opt.color[1] as u32 / 255) as u8,
+                            (dimming * opt.color[2] as u32 / 255) as u8,
+                            255,
+                        ])
+                    } else {
+                        image::Rgba([*pixel_value, *pixel_value, *pixel_value, 255])
+                    }
                 }
             }
             canvas.pixels = vec![0; canvas.pixels.len()];
@@ -150,8 +171,14 @@ pub fn text_to_image(
 pub fn example() {
     let content = "HELLO WORLD\n this is A TEXT\n\nwith q and p\nmultiline text\n==============================".to_string();
     let content_preproc = ascii_box(content, 1, 0);
-    text_to_image(&CharMatrix::new(&content_preproc), 800, 1.0, 1.0)
-        .unwrap()
-        .save("test.png")
-        .unwrap()
+    text_to_image(
+        &CharMatrix::new(&content_preproc),
+        800,
+        1.0,
+        1.0,
+        &Vec::new(),
+    )
+    .unwrap()
+    .save("test.png")
+    .unwrap()
 }

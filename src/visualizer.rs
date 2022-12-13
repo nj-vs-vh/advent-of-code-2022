@@ -236,7 +236,7 @@ impl Visualizer for GifVisualizer {
             self.frame_dimensions = Some(frame_chars.dimensions());
         }
 
-        let image = text_to_image(&frame_chars, self.width_px, 1.0, 0.0);
+        let image = text_to_image(&frame_chars, self.width_px, 1.0, 0.0, &self.opts);
         self.curr_frame.clear();
         if let Some(img) = image {
             let frame =
