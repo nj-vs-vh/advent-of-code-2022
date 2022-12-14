@@ -1,7 +1,10 @@
 use clap::ValueEnum;
+use std::cmp::{max, min};
+use std::iter::Step;
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Sub;
+use std::str::FromStr;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum RunPart {
@@ -16,14 +19,51 @@ pub struct Coords<NumericT> {
     pub y: NumericT,
 }
 
-impl<HasZero: From<bool> + Eq> Coords<HasZero> {
-    pub fn is_origin(&self) -> bool {
-        return self.x == HasZero::from(false) && self.y == HasZero::from(false);
+#[derive(Debug)]
+pub struct CoordsParsingError;
+
+impl<ParsableT: FromStr> FromStr for Coords<ParsableT> {
+    type Err = CoordsParsingError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut parts = s.split(",");
+        let x = parts
+            .next()
+            .ok_or(CoordsParsingError)?
+            .parse::<ParsableT>()
+            .map_err(|_| CoordsParsingError)?;
+        let y = parts
+            .next()
+            .ok_or(CoordsParsingError)?
+            .parse::<ParsableT>()
+            .map_err(|_| CoordsParsingError)?;
+        Ok(Coords { x, y })
     }
-    pub fn origin() -> Coords<HasZero> {
+}
+
+impl<NumericT: From<bool> + Eq + Ord + Step + Copy> Coords<NumericT> {
+    pub fn is_origin(&self) -> bool {
+        return self.x == NumericT::from(false) && self.y == NumericT::from(false);
+    }
+
+    pub fn origin() -> Coords<NumericT> {
         Coords {
-            x: HasZero::from(false),
-            y: HasZero::from(false),
+            x: NumericT::from(false),
+            y: NumericT::from(false),
+        }
+    }
+
+    pub fn line_between(&self, other: &Coords<NumericT>) -> Vec<Coords<NumericT>> {
+        if self.x == other.x {
+            let start_y = min(self.y, other.y);
+            let end_y = max(self.y, other.y);
+            (start_y..=end_y).map(|y| Coords { x: self.x, y }).collect()
+        } else if self.y == other.y {
+            let start_x = min(self.x, other.x);
+            let end_x = max(self.x, other.x);
+            (start_x..=end_x).map(|x| Coords { y: self.y, x }).collect()
+        } else {
+            Vec::new()
         }
     }
 }

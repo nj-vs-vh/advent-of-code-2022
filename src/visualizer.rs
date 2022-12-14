@@ -12,7 +12,10 @@ use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
-use crate::text_to_image::{text_to_image, CharMatrix};
+use crate::{
+    text_to_image::{text_to_image, CharMatrix},
+    types::Coords,
+};
 
 pub struct CharVisualizationOption {
     pub char: char,
@@ -63,9 +66,10 @@ const INTERACTIVE_TERMINAL_VISUALIZER_MAX_HISTORY_DEPTH: usize = 1000;
 pub struct TerminalVisualizer {
     fps: f32,
     is_interactive: bool,
-    prev_displayed_frame_lines: usize,
+    prev_displayed_lines: usize,
     frame_buffer: VecDeque<String>,
     opts: Vec<CharVisualizationOption>,
+    top_left_offset: Coords<usize>,
 }
 
 impl TerminalVisualizer {
@@ -73,21 +77,18 @@ impl TerminalVisualizer {
         TerminalVisualizer {
             fps,
             is_interactive,
-            prev_displayed_frame_lines: 0,
+            prev_displayed_lines: 0,
             frame_buffer: VecDeque::with_capacity(
                 INTERACTIVE_TERMINAL_VISUALIZER_MAX_HISTORY_DEPTH,
             ),
             opts: Vec::new(),
+            top_left_offset: Coords::origin(),
         }
     }
 }
 
-impl Visualizer for TerminalVisualizer {
-    fn write_char(&mut self, ch: char) {
-        if self.frame_buffer.len() == 0 {
-            self.frame_buffer.push_back(String::with_capacity(1000));
-        }
-        let current_frame_idx = self.frame_buffer.len() - 1;
+impl TerminalVisualizer {
+    fn apply_opts(&self, ch: char) -> Option<String> {
         match self.opts.iter().find(|o| o.char == ch) {
             Some(char_vis_opt) => {
                 let mut style = ansi_term::Style::new();
@@ -99,27 +100,62 @@ impl Visualizer for TerminalVisualizer {
                 if char_vis_opt.is_bold {
                     style = style.bold();
                 }
-                self.frame_buffer[current_frame_idx]
-                    .extend(style.paint(String::from(ch)).to_string().chars())
+                Some(style.paint(String::from(ch)).to_string())
             }
-            None => {
-                self.frame_buffer[current_frame_idx].push(ch);
-            }
+            None => None,
         }
+    }
+}
+
+impl Visualizer for TerminalVisualizer {
+    fn write_char(&mut self, ch: char) {
+        if self.frame_buffer.len() == 0 {
+            self.frame_buffer.push_back(String::with_capacity(1000));
+        }
+        let current_frame_idx = self.frame_buffer.len() - 1;
+        self.frame_buffer[current_frame_idx].push(ch);
     }
 
     fn end_frame(&mut self) {
         let mut displayed_frame_idx = self.frame_buffer.len() - 1;
 
         loop {
-            for _ in 0..self.prev_displayed_frame_lines {
+            for _ in 0..self.prev_displayed_lines {
                 print!("\x1B[2K\x1B[1A\x1B[2K"); // clear
             }
-            print!("{}", self.frame_buffer[displayed_frame_idx]);
-            self.prev_displayed_frame_lines = self.frame_buffer[displayed_frame_idx]
-                .chars()
-                .filter(|c| *c == '\n')
-                .count();
+
+            let displayed_frame = &self.frame_buffer[displayed_frame_idx];
+
+            let (terminal_width, terminal_height) = termion::terminal_size().unwrap_or((80, 80));
+            let display_width = terminal_width as usize;
+            let display_height = if terminal_height > 20 {
+                terminal_height as usize - 15
+            } else {
+                terminal_height as usize
+            };
+            let displayed_frame_lines: Vec<String> = displayed_frame
+                .lines()
+                .skip(self.top_left_offset.y)
+                .take(display_height)
+                .map(|l| {
+                    l.chars()
+                        .skip(self.top_left_offset.x)
+                        .take(display_width)
+                        .collect()
+                })
+                .collect();
+
+            let mut to_print: String = String::new();
+            for ch in displayed_frame_lines.join("\n").chars() {
+                if let Some(with_opts) = self.apply_opts(ch) {
+                    to_print.extend(with_opts.chars());
+                } else {
+                    to_print.push(ch);
+                }
+            }
+            print!("{}", to_print);
+
+            self.prev_displayed_lines = displayed_frame_lines.len();
 
             if !self.is_interactive {
                 sleep(Duration::from_micros((1e6 / self.fps) as u64));
@@ -127,7 +163,7 @@ impl Visualizer for TerminalVisualizer {
             } else {
                 // user controls input loop
                 println!(
-                    "\ninteractive mode (frame {} / {})\nh, l - forward and backwards\n_, $ - jump to the first and last frame\nq - exit interactive mode",
+                    "\ninteractive mode (frame {} / {})\nh, l - forward and backwards\n_, $ - jump to the first and last frame\narrows - pan displayed frame portion\nq - exit interactive mode",
                     displayed_frame_idx + 1,
                     self.frame_buffer.len()
                 );
@@ -138,13 +174,13 @@ impl Visualizer for TerminalVisualizer {
                     write!(stdout, "{}", termion::clear::CurrentLine).unwrap();
 
                     match c.unwrap() {
-                        Key::Char('h') | Key::Left => {
+                        Key::Char('h') => {
                             if displayed_frame_idx > 0 {
                                 displayed_frame_idx -= 1;
                                 break;
                             }
                         }
-                        Key::Char('l') | Key::Right | Key::Char(' ') => {
+                        Key::Char('l') | Key::Char(' ') => {
                             if displayed_frame_idx < self.frame_buffer.len() - 1 {
                                 displayed_frame_idx += 1;
                             } else {
@@ -158,6 +194,26 @@ impl Visualizer for TerminalVisualizer {
                         }
                         Key::Char('_') => {
                             displayed_frame_idx = 0;
+                            break;
+                        }
+                        Key::Left => {
+                            if self.top_left_offset.x > 0 {
+                                self.top_left_offset.x -= 1;
+                            }
+                            break;
+                        }
+                        Key::Right => {
+                            self.top_left_offset.x += 1;
+                            break;
+                        }
+                        Key::Up => {
+                            if self.top_left_offset.y > 0 {
+                                self.top_left_offset.y -= 1;
+                            }
+                            break;
+                        }
+                        Key::Down => {
+                            self.top_left_offset.y += 1;
                             break;
                         }
                         Key::Char('q') => {
