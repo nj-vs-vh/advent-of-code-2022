@@ -227,9 +227,9 @@ impl Solution for RegolithReservoir {
         }
 
         let mut last_arrived_from: Vec<Vec<Option<ArrivedFrom>>> = Vec::new();
-        for i in 0..modified_input.height {
+        for _i in 0..modified_input.height {
             let mut row: Vec<Option<ArrivedFrom>> = Vec::new();
-            for j in 0..modified_input.width {
+            for _j in 0..modified_input.width {
                 row.push(None);
             }
             last_arrived_from.push(row);
