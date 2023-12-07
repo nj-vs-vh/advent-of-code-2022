@@ -1,8 +1,8 @@
 use clap::ValueEnum;
 use std::cmp::{max, min};
-use std::iter::Step;
 use std::ops::Add;
 use std::ops::AddAssign;
+use std::ops::RangeInclusive;
 use std::ops::Sub;
 use std::str::FromStr;
 
@@ -41,7 +41,10 @@ impl<ParsableT: FromStr> FromStr for Coords<ParsableT> {
     }
 }
 
-impl<NumericT: From<bool> + Eq + Ord + Step + Copy> Coords<NumericT> {
+impl<NumericT: From<bool> + Eq + Ord + Copy> Coords<NumericT>
+where
+    RangeInclusive<NumericT>: Iterator<Item = NumericT>,
+{
     pub fn is_origin(&self) -> bool {
         return self.x == NumericT::from(false) && self.y == NumericT::from(false);
     }

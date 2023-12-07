@@ -1,4 +1,3 @@
-#![feature(step_trait)]
 mod color;
 mod days;
 mod solution;
