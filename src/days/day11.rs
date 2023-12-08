@@ -207,7 +207,7 @@ impl Solution for MonkeyInTheMiddle {
     ) -> Self::OutputT {
         let mut monkey_business: Vec<u64> = vec![0; monkeys.len()];
         let magic_constant: u64 = monkeys.iter().map(|m| m.test_divisible_by).product();
-        println!("Magic constant: {}", magic_constant);
+        // println!("Magic constant: {}", magic_constant);
 
         visualize_monkeys(vis, 0, &monkeys, None, None);
         for round in 0..10000 {

@@ -88,6 +88,7 @@ fn main() {
         13 => days::day13::DistressSignal.run(input, part, vis),
         14 => days::day14::RegolithReservoir.run(input, part, vis),
         15 => days::day15::BeaconExclusionZone.run(input, part, vis),
+        16 => days::day16::ProboscideaVolcanium.run(input, part, vis),
         _ => {
             println!("Solution is not yet implemented");
         }
