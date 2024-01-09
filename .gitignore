@@ -2,3 +2,4 @@
 data
 *.gif
 .DS_Store
+venv/
